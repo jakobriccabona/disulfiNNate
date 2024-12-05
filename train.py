@@ -17,7 +17,7 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import pandas as pd
 
-data = np.load('graphs.npz')
+data = np.load('merged_file.npz')
 Xs = data['Xs']
 As = data['As']
 Es = data['Es']
@@ -74,5 +74,5 @@ E_reshaped, _ = ros.fit_resample(Es_reshaped, y_train)
 num_features = E_train.shape[1:]
 E_ros = E_reshaped.reshape(-1, *num_features)
 
-history = model.fit(x=[X_ros, A_ros, E_ros], y=y_ros, batch_size=50, epochs=100, validation_data=([X_val, A_val, E_val], y_val))
-model.save("disulfinet3d-4.keras")
+history = model.fit(x=[X_ros, A_ros, E_ros], y=y_ros, batch_size=50, epochs=50, validation_data=([X_val, A_val, E_val], y_val))
+model.save("v0.keras")
