@@ -19,8 +19,8 @@ RUN apt-get update && apt-get install -y \
 # Create a symbolic link from python3 to python
 RUN ln -s /usr/bin/python3 /usr/bin/python
 #Download the models & python file for execution from my github repo
-RUN git clone https://github.com/jakobriccabona/DiSulfiNet.git
-WORKDIR /DiSulfiNet
+RUN git clone https://github.com/jakobriccabona/disulfiNNate.git
+WORKDIR /disulfiNNate
 #Download dependencies
 RUN pip install --no-cache-dir numpy pandas argparse tensorflow==2.12.0 \
  scikit-learn matplotlib seaborn spektral \
@@ -28,4 +28,4 @@ RUN pip install --no-cache-dir numpy pandas argparse tensorflow==2.12.0 \
  menten-gcn
 RUN python -c 'import pyrosetta_installer; pyrosetta_installer.install_pyrosetta(serialization=True)'
 #define the command to run your script
-CMD ["python", "diSulfiNet.py"]
+CMD ["python", "disulfiNNate.py"]
