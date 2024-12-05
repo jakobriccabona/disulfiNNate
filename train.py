@@ -23,12 +23,21 @@ As = data['As']
 Es = data['Es']
 outs = data['outs']
 
-decorators = [decs.trRosettaEdges(use_nm=True),
-              decs.Rosetta_Ref2015_TwoBodyEneriges(individual=True, score_types=[ScoreType.fa_rep, ScoreType.fa_atr, ScoreType.fa_sol, ScoreType.lk_ball_wtd, ScoreType.fa_elec, ScoreType.hbond_sr_bb, ScoreType.hbond_lr_bb, ScoreType.hbond_bb_sc, ScoreType.hbond_sc])]
+decorators = [decs.CACA_dist(use_nm=True),
+              decs.trRosettaEdges(sincos=True, use_nm=True),
+              decs.Rosetta_Ref2015_TwoBodyEneriges(individual=True, score_types=[ScoreType.fa_rep,
+                                                                                 ScoreType.fa_atr, 
+                                                                                 ScoreType.fa_sol, 
+                                                                                 ScoreType.lk_ball_wtd, 
+                                                                                 ScoreType.fa_elec, 
+                                                                                 ScoreType.hbond_sr_bb, 
+                                                                                 ScoreType.hbond_lr_bb, 
+                                                                                 ScoreType.hbond_bb_sc, 
+                                                                                 ScoreType.hbond_sc])]
 data_maker = mg.DataMaker(decorators=decorators,
                            edge_distance_cutoff_A=8.0,
-                           max_residues=15,
-                           nbr_distance_cutoff_A=10.0)
+                           max_residues=20,
+                           nbr_distance_cutoff_A=12.0)
 
 X_in, A_in, E_in = data_maker.generate_XAE_input_layers()
 

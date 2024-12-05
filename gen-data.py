@@ -15,7 +15,8 @@ import glob
 import math
 from multiprocessing import Pool, cpu_count
 
-decorators = [decs.trRosettaEdges(use_nm=True), 
+decorators = [decs.CACA_dist(use_nm=True),
+              decs.trRosettaEdges(sincos=True, use_nm=True),
               decs.Rosetta_Ref2015_TwoBodyEneriges(individual=True, score_types=[ScoreType.fa_rep,
                                                                                  ScoreType.fa_atr, 
                                                                                  ScoreType.fa_sol, 
@@ -27,8 +28,8 @@ decorators = [decs.trRosettaEdges(use_nm=True),
                                                                                  ScoreType.hbond_sc])]
 data_maker = mg.DataMaker(decorators=decorators,
                            edge_distance_cutoff_A=8.0,
-                           max_residues=15,
-                           nbr_distance_cutoff_A=10.0)
+                           max_residues=20,
+                           nbr_distance_cutoff_A=12.0)
 data_maker.summary()
 
 def get_cys(pose):
