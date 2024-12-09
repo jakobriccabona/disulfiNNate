@@ -47,7 +47,8 @@ def build_graphs_wrapper(arguments):
     wrapped_pose, pair = arguments
     return build_graphs(wrapped_pose, pair)
 
-decorators = [decs.trRosettaEdges(use_nm=True), 
+decorators = [decs.CACA_dist(use_nm=True),
+              decs.trRosettaEdges(sincos=True, use_nm=True),
               decs.Rosetta_Ref2015_TwoBodyEneriges(individual=True, score_types=[ScoreType.fa_rep,
                                                                                  ScoreType.fa_atr, 
                                                                                  ScoreType.fa_sol, 
@@ -57,11 +58,10 @@ decorators = [decs.trRosettaEdges(use_nm=True),
                                                                                  ScoreType.hbond_lr_bb, 
                                                                                  ScoreType.hbond_bb_sc, 
                                                                                  ScoreType.hbond_sc])]
-
 data_maker = mg.DataMaker(decorators=decorators,
                            edge_distance_cutoff_A=8.0,
-                           max_residues=15,
-                           nbr_distance_cutoff_A=10.0)
+                           max_residues=20,
+                           nbr_distance_cutoff_A=12.0)
 #data_maker.summary()
 
 parser = argparse.ArgumentParser()
@@ -75,7 +75,7 @@ pdb = args.input
 pose = pyrosetta.pose_from_pdb(pdb)
 wrapped_pose = mg.RosettaPoseWrapper(pose)
 custom_objects = {'ECCConv': ECCConv, 'GlobalSumPool': GlobalSumPool}
-model = load_model('v0.keras', custom_objects)
+model = load_model(args.model, custom_objects)
 
 pairs = []
 

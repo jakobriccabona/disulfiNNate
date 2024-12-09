@@ -41,12 +41,11 @@ data_maker = mg.DataMaker(decorators=decorators,
 
 X_in, A_in, E_in = data_maker.generate_XAE_input_layers()
 
-edge_net = Dense(20, activation='relu')(E_in)
-L1 = ECCConv(15, activation=None, edge_network=edge_net)([X_in, A_in, E_in])
+L1 = ECCConv(30, activation=None)([X_in, A_in, E_in])
 L1_bn = BatchNormalization()(L1)
 L1_act = Activation('relu')(L1_bn)
 L1_drop = Dropout(0.2)(L1_act)
-L2 = ECCConv(15, activation=None)([L1_drop, A_in, E_in])
+L2 = ECCConv(20, activation=None)([L1_drop, A_in, E_in])
 L2_bn = BatchNormalization()(L2)
 L2_act = Activation('relu')(L2_bn)
 L2_drop = Dropout(0.2)(L2_act)
