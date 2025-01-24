@@ -67,7 +67,7 @@ data_maker = mg.DataMaker(decorators=decorators,
 parser = argparse.ArgumentParser()
 parser.add_argument('-i','--input', type=str, required=True, help='input file (PDB format)')
 parser.add_argument('-o', '--output', type=str, default='out.csv', help='output file name. default=out.csv')
-parser.add_argument('-m', '--model', type=str, default='v0.keras', help='model name. default=v0.keras')
+parser.add_argument('-m', '--model', type=str, default='v1.keras', help='model name. default=v0.keras')
 args = parser.parse_args()
 
 #TO DO: load the model here
