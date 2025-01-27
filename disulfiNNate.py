@@ -15,7 +15,7 @@ from pyrosetta.rosetta.core.scoring import ScoreType
 import menten_gcn as mg
 import menten_gcn.decorators as decs
 
-from spektral.layers import ECCConv, GlobalSumPool
+from spektral.layers import ECCConv, GlobalMaxPool
 from tensorflow.keras.layers import *
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import load_model
@@ -74,7 +74,7 @@ args = parser.parse_args()
 pdb = args.input
 pose = pyrosetta.pose_from_pdb(pdb)
 wrapped_pose = mg.RosettaPoseWrapper(pose)
-custom_objects = {'ECCConv': ECCConv, 'GlobalSumPool': GlobalSumPool}
+custom_objects = {'ECCConv': ECCConv, 'GlobalMaxPool': GlobalMaxPool}
 model = load_model(args.model, custom_objects)
 
 pairs = []
@@ -110,6 +110,8 @@ y_pred = model.predict([Xs_, As_, Es_])
 #get chain & position information from pairs
 pdb_numbering = []
 chains = []
+residues = []
+
 for i in pairs:
     _1 = pose.pdb_info().number(int(i[0]))
     _2 = pose.pdb_info().number(int(i[1]))
@@ -117,11 +119,15 @@ for i in pairs:
     _1 = pose.pdb_info().chain(int(i[0]))
     _2 = pose.pdb_info().chain(int(i[1]))
     chains.append([_1, _2])
+    _1 = pose.residue(int(i[0])).name()
+    _2 = pose.residue(int(i[1])).name()
+    residues.append([_1, _2])
 
 #output
 df = pd.DataFrame({'chains': chains,
                    'pdb numbering': pdb_numbering,
                    'rosetta numbering': pairs,
+                   'residue': residues,
                    'probability': y_pred.flatten()
                    })
 df.to_csv(args.output, index=False)
