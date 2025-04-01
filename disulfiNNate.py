@@ -11,13 +11,13 @@ print("""
 import pyrosetta
 pyrosetta.init('-mute all')
 from pyrosetta.rosetta.core.scoring import ScoreType
+from pyrosetta.rosetta.protocols.relax import FastRelax
 
 import menten_gcn as mg
 import menten_gcn.decorators as decs
 
 from spektral.layers import ECCConv, GlobalMaxPool
 from tensorflow.keras.layers import *
-from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import load_model
 
 
