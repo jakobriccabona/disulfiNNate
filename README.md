@@ -1,4 +1,4 @@
-# disulfiNNAte
+# disulfiNNate
 
 an edge conditioned graph convolutional network trained to predict possible disulfide-bridge positions in proteins.
 
@@ -10,6 +10,7 @@ arguments:
   -i, --input           path to the input pdb file
   -o, --ouput           output file name. default=out.csv
   -m, --model           model name. default=v0.keras
+  --fastrelax           executes fastrelax before the relaxation
 ```
 
 The output.csv contains the residues pairs with the corresponding probability.

@@ -68,11 +68,22 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-i','--input', type=str, required=True, help='input file (PDB format)')
 parser.add_argument('-o', '--output', type=str, default='out.csv', help='output file name. default=out.csv')
 parser.add_argument('-m', '--model', type=str, default='v1.keras', help='model name. default=v0.keras')
+parser.add_argument('--fastrelax', action='store_true', help='Flag to perform a fast relax on the structure before analysis'))
 args = parser.parse_args()
 
 #TO DO: load the model here
 pdb = args.input
 pose = pyrosetta.pose_from_pdb(pdb)
+
+# Perform FastRelax if flag is set
+if args.fastrelax:
+    scfxn = pyrosetta.get_fa_scorefxn()
+    fast_relax = FastRelax(scorefxn_in = scfxn, standard_repeats=1)
+    fast_relax.set_scorefxn(scfxn)
+    print('Executing fast relax...')
+    fast_relax.apply(pose)
+    print('fast relax finished')
+
 wrapped_pose = mg.RosettaPoseWrapper(pose)
 custom_objects = {'ECCConv': ECCConv, 'GlobalMaxPool': GlobalMaxPool}
 model = load_model(args.model, custom_objects)
