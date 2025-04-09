@@ -22,6 +22,8 @@ from sklearn.metrics import roc_curve, roc_auc_score
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 data = np.load('merged_file.npz')
 Xs = data['Xs']
@@ -87,7 +89,7 @@ L3_bn = BatchNormalization()(L3)
 L3_act = Activation('relu')(L3_bn)
 L3_drop = Dropout(0.2)(L3_act)
 
-L3 = GlobalMaxPool()(L3_drop)
+L3 = GlobalAttentionPool(128)(L3_drop)
 L4 = Flatten()(L3)
 output = Dense(1, name="out", activation="sigmoid")(L4)
 
@@ -105,16 +107,16 @@ early_stopping = keras.callbacks.EarlyStopping(
     restore_best_weights=True
 )
 history = model.fit(x=[X_rus, A_rus, E_rus], y=y_rus, batch_size=50, epochs=500, validation_data=([X_val, A_val, E_val], y_val), callbacks=[early_stopping])
-model.save("v1.keras")
+model.save("v2.keras")
 
 
 #validation
 y_pred_prob = model.predict([X_val, A_val, E_val])
-y_pred = (y_pred_prob > 0.5).astype(int) 
+y_pred = (y_pred_prob > 0.5).astype(int)
 
-mcc = matthews_corrcoef(out_test, y_pred)
+mcc = matthews_corrcoef(y_val, y_pred)
 print('Matthews Coefficient:', mcc)
-fpr, tpr, thresholds = roc_curve(out_test, y_pred_prob)
+fpr, tpr, thresholds = roc_curve(y_val, y_pred_prob)
 auc = roc_auc_score(y_val, y_pred_prob)
 print('auc:', auc)
 precision, recall, thresholds = precision_recall_curve(y_val, y_pred_prob)
@@ -122,35 +124,35 @@ cm = confusion_matrix(y_val, y_pred)
 cmn = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
 #Plottings
-#plt.plot(history.history['loss'], label='Training Loss', color='royalblue')
-#plt.plot(history.history['val_loss'], label='Validation Loss', color='goldenrod')
-#plt.title('Model Loss Over Epochs')
-#plt.xlabel('Epochs')
-#plt.ylabel('Loss')
-#plt.legend()
-#plt.savefig('history.png')
-#plt.clf()
+plt.plot(history.history['loss'], label='Training Loss', color='royalblue')
+plt.plot(history.history['val_loss'], label='Validation Loss', color='goldenrod')
+plt.title('Model Loss Over Epochs')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+plt.savefig('history.png')
+plt.clf()
 
-#plt.plot(recall, precision)
-#plt.xlabel('Recall')
-#plt.ylabel('Precision')
-#plt.title('Precision-Recall Curve')
-#plt.savefig('precision-recall.png')
-#plt.clf()
+plt.plot(recall, precision)
+plt.xlabel('Recall')
+plt.ylabel('Precision')
+plt.title('Precision-Recall Curve')
+plt.savefig('precision-recall.png')
+plt.clf()
 
-#plt.plot(fpr, tpr, label='ROC curve', color='royalblue')
-#plt.xscale('log')  # Set x-axis to logarithmic scale
-#plt.xlabel('Log False Positive Rate (FPR)')
-#plt.ylabel('True Positive Rate (TPR)')
-#plt.xlim([0.00001, 1])  # Set limits for the logarithmic scale
-#plt.ylim([0.0, 1.05])
-#plt.title('Log ROC Curve')
-#plt.savefig('log-roc.png')
-#plt.clf()
+plt.plot(fpr, tpr, label='ROC curve', color='royalblue')
+plt.xscale('log')  # Set x-axis to logarithmic scale
+plt.xlabel('Log False Positive Rate (FPR)')
+plt.ylabel('True Positive Rate (TPR)')
+plt.xlim([0.00001, 1])  # Set limits for the logarithmic scale
+plt.ylim([0.0, 1.05])
+plt.title('Log ROC Curve')
+plt.savefig('log-roc.png')
+plt.clf()
 
-#sns.heatmap(cmn, annot=True, fmt='g', cmap='Blues', xticklabels=['Non-Proline', 'Proline'], yticklabels=['Non-Proline', 'Proline'])
-#plt.xlabel('Predicted Label')
-#plt.ylabel('True Label')
-#plt.title('Confusion Matrix')
-#plt.savefig('conf-m.png')
+sns.heatmap(cmn, annot=True, fmt='g', cmap='Blues', xticklabels=['Non-Disulfide', 'Disulfide'], yticklabels=['Non-Disulfide', 'Disulfide'])
+plt.xlabel('Predicted Label')
+plt.ylabel('True Label')
+plt.title('Confusion Matrix')
+plt.savefig('conf-m.png')
 
