@@ -11,8 +11,8 @@ from keras.regularizers import l2
 from tensorflow.keras.layers import *
 from tensorflow.keras.models import Model
 #from sklearn.utils import shuffle
-#from imblearn.over_sampling import RandomOverSampler 
-from imblearn.under_sampling import RandomUnderSampler
+from imblearn.over_sampling import RandomOverSampler 
+#from imblearn.under_sampling import RandomUnderSampler
 from sklearn.model_selection import train_test_split
 
 from sklearn.metrics import precision_recall_curve, confusion_matrix
@@ -41,7 +41,7 @@ X_train, X_val, A_train, A_val, E_train, E_val, y_train, y_val = train_test_spli
 
 def UnderSample(x_label, y_label):
 
-    rus = RandomUnderSampler(sampling_strategy='auto', random_state=42)
+    rus = RandomOverSampler(sampling_strategy='auto', random_state=42)
     data_reshaped = x_label.reshape(x_label.shape[0], -1)
     data_new, y_rus = rus.fit_resample(data_reshaped, y_label)
     num_features = x_label.shape[1:]
@@ -74,7 +74,7 @@ X_in, A_in, E_in = data_maker.generate_XAE_input_layers()
 # Define GCN model
 X_in, A_in, E_in = data_maker.generate_XAE_input_layers()
 
-L1 = ECCConv(64, activation=None)([X_in, A_in, E_in])
+L1 = ECCConv(32, activation=None)([X_in, A_in, E_in])
 L1_bn = BatchNormalization()(L1)
 L1_act = Activation('relu')(L1_bn)
 L1_drop = Dropout(0.2)(L1_act)
@@ -84,14 +84,14 @@ L2_bn = BatchNormalization()(L2)
 L2_act = Activation('relu')(L2_bn)
 L2_drop = Dropout(0.2)(L2_act)
 
-L3 = ECCConv(16, activation=None)([L2_drop, A_in, E_in])
-L3_bn = BatchNormalization()(L3)
-L3_act = Activation('relu')(L3_bn)
-L3_drop = Dropout(0.2)(L3_act)
+#L3 = ECCConv(16, activation=None)([L2_drop, A_in, E_in])
+#L3_bn = BatchNormalization()(L3)
+#L3_act = Activation('relu')(L3_bn)
+#L3_drop = Dropout(0.2)(L3_act)
 
-L3 = GlobalAttentionPool(128)(L3_drop)
-L4 = Flatten()(L3)
-output = Dense(1, name="out", activation="sigmoid")(L4)
+L4 = GlobalSumPool()(L2_drop)
+L5 = Flatten()(L4)
+output = Dense(1, name="out", activation="sigmoid", kernel_regularizer=l2(0.01))(L5)
 
 model = Model(inputs=[X_in, A_in, E_in], outputs=output)
 opt = keras.optimizers.Adam(learning_rate=1e-4)
@@ -106,7 +106,7 @@ early_stopping = keras.callbacks.EarlyStopping(
     mode='min',
     restore_best_weights=True
 )
-history = model.fit(x=[X_rus, A_rus, E_rus], y=y_rus, batch_size=50, epochs=500, validation_data=([X_val, A_val, E_val], y_val), callbacks=[early_stopping])
+history = model.fit(x=[X_rus, A_rus, E_rus], y=y_rus, batch_size=100, epochs=500, validation_data=([X_val, A_val, E_val], y_val), callbacks=[early_stopping])
 model.save("v2.keras")
 
 
