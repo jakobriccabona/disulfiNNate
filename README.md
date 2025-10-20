@@ -14,3 +14,15 @@ arguments:
 ```
 
 The output.csv contains the residues pairs with the corresponding probability.
+
+### docker execution
+
+here is how you can build the docker image:
+```
+docker build -t disulfinnate:v1 .
+```
+
+the following command executes a test run:
+```
+docker run --rm -v $(pwd):/disulfiNNate/data disulfinnate:v1 python disulfiNNate.py -i test/3ft7.pdb -o test/out.csv
+```
