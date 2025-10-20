@@ -35,7 +35,7 @@ data_maker.summary()
 def get_cys(pose):
     disulfides = []
     for i in range(1, pose.size()+1):
-        if pose.residue(i).name() == "CYS:disulfide":
+        if pose.residue(i).name() == "CYS":
             res = pose.residue(i)
             disulfide_partner = res.residue_connection_partner(res.n_current_residue_connections())
             if disulfide_partner > i:
@@ -98,7 +98,7 @@ def process_and_save_chunk(chunk_index, pdb_chunk):
             Es_chunk.append(E)
             outs_chunk.append([0.0,])
     
-    np.savez_compressed(f'graphs/data_chunk_{chunk_index}.npz', Xs=Xs_chunk, As=As_chunk, Es=Es_chunk, outs=outs_chunk)
+    np.savez_compressed(f'graphs/data_chunk_{chunk_index}-allcys.npz', Xs=Xs_chunk, As=As_chunk, Es=Es_chunk, outs=outs_chunk)
     print(f'Chunk {chunk_index} saved!')
 
 def process_chunks(pdb_list, chunk_size):

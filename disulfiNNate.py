@@ -16,7 +16,7 @@ from pyrosetta.rosetta.protocols.relax import FastRelax
 import menten_gcn as mg
 import menten_gcn.decorators as decs
 
-from spektral.layers import ECCConv, GlobalMaxPool
+from spektral.layers import *
 from tensorflow.keras.layers import *
 from tensorflow.keras.models import load_model
 
@@ -85,7 +85,7 @@ if args.fastrelax:
     print('fast relax finished')
 
 wrapped_pose = mg.RosettaPoseWrapper(pose)
-custom_objects = {'ECCConv': ECCConv, 'GlobalMaxPool': GlobalMaxPool}
+custom_objects = {'ECCConv': ECCConv, 'GATConv': GATConv, 'GlobalSumPool': GlobalSumPool, 'GlobalMaxPool': GlobalMaxPool}
 model = load_model(args.model, custom_objects)
 
 pairs = []

@@ -6,13 +6,14 @@ import menten_gcn as mg
 import menten_gcn.decorators as decs
 
 import keras
+import tensorflow
 from spektral.layers import *
 from keras.regularizers import l2
 from tensorflow.keras.layers import *
 from tensorflow.keras.models import Model
-#from sklearn.utils import shuffle
+
 from imblearn.over_sampling import RandomOverSampler 
-#from imblearn.under_sampling import RandomUnderSampler
+from imblearn.under_sampling import RandomUnderSampler
 from sklearn.model_selection import train_test_split
 
 from sklearn.metrics import precision_recall_curve, confusion_matrix
@@ -21,9 +22,9 @@ from sklearn.metrics import roc_curve, roc_auc_score
 
 
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from collections import Counter
 
 data = np.load('merged_file.npz')
 Xs = data['Xs']
@@ -39,19 +40,44 @@ outs = np.asarray( outs )
 # Train Test split
 X_train, X_val, A_train, A_val, E_train, E_val, y_train, y_val = train_test_split(Xs, As, Es, outs, test_size=0.2, random_state=42)
 
-def UnderSample(x_label, y_label):
+# Weighted Random Over Sampling to balance classes according to natural prevalence (3% positive)
+desired_pos_ratio = 0.03
+n_samples = X_train.shape[0]
+n_pos = int(n_samples * desired_pos_ratio)
+n_neg = n_samples - n_pos
 
-    rus = RandomOverSampler(sampling_strategy='auto', random_state=42)
-    data_reshaped = x_label.reshape(x_label.shape[0], -1)
-    data_new, y_rus = rus.fit_resample(data_reshaped, y_label)
-    num_features = x_label.shape[1:]
-    x_rus = data_new.reshape(-1, *num_features)
-    
-    return x_rus, y_rus
+# Count current class distribution
+counter = Counter(y_train.flatten())
+current_pos = counter[1]
+current_neg = counter[0]
 
-X_rus, y_rus = UnderSample(X_train, y_train)
-A_rus, y_rus = UnderSample(A_train, y_train)
-E_rus, y_rus = UnderSample(E_train, y_train)
+# Case 1: Need to oversample positives
+if current_pos < n_pos:
+    sampling_strategy = {0: current_neg, 1: n_pos}
+    sampler = RandomOverSampler(sampling_strategy=sampling_strategy, random_state=42)
+    print('\n\n Oversampling applied \n\n')
+
+# Case 2: Need to undersample negatives
+elif current_pos > n_pos:
+    sampling_strategy = {0: n_neg, 1: current_pos}
+    sampler = RandomUnderSampler(sampling_strategy=sampling_strategy, random_state=42)
+    print('\n\n Undersampling applied \n\n')
+
+# Case 3: Already exactly at ratio
+else:
+    sampler = None  # No resampling needed
+    print('\n\n No resampling needed \n\n')
+
+def apply_sampler(sampler, X, y):
+    if sampler is None:
+        return X, y
+    Xs_reshaped = X.reshape(X.shape[0], -1)
+    X_res, y_res = sampler.fit_resample(Xs_reshaped, y)
+    return X_res.reshape(-1, *X.shape[1:]), y_res
+
+X_ros, y_ros = apply_sampler(sampler, X_train, y_train)
+A_ros, _     = apply_sampler(sampler, A_train, y_train)
+E_ros, _     = apply_sampler(sampler, E_train, y_train)
 
 decorators = [decs.CACA_dist(use_nm=True),
               decs.trRosettaEdges(sincos=True, use_nm=True),
@@ -69,34 +95,39 @@ data_maker = mg.DataMaker(decorators=decorators,
                            max_residues=20,
                            nbr_distance_cutoff_A=12.0)
 
-X_in, A_in, E_in = data_maker.generate_XAE_input_layers()
-
 # Define GCN model
 X_in, A_in, E_in = data_maker.generate_XAE_input_layers()
 
-L1 = ECCConv(32, activation=None)([X_in, A_in, E_in])
+X_noisy = GaussianNoise(0.1)(X_in)
+E_noisy = GaussianNoise(0.1)(E_in)
+
+L1 = ECCConv(64, activation=None)([X_noisy, A_in, E_noisy])
 L1_bn = BatchNormalization()(L1)
 L1_act = Activation('relu')(L1_bn)
 L1_drop = Dropout(0.2)(L1_act)
 
-L2 = ECCConv(32, activation=None)([L1_drop, A_in, E_in])
+L2 = ECCConv(32, activation=None)([L1_drop, A_in, E_noisy])
 L2_bn = BatchNormalization()(L2)
 L2_act = Activation('relu')(L2_bn)
 L2_drop = Dropout(0.2)(L2_act)
 
-#L3 = ECCConv(16, activation=None)([L2_drop, A_in, E_in])
-#L3_bn = BatchNormalization()(L3)
-#L3_act = Activation('relu')(L3_bn)
-#L3_drop = Dropout(0.2)(L3_act)
+L3 = ECCConv(16, activation=None)([L2_drop, A_in, E_noisy])
+L3_bn = BatchNormalization()(L3)
+L3_act = Activation('relu')(L3_bn)
+L3_drop = Dropout(0.2)(L3_act)
 
-L4 = GlobalSumPool()(L2_drop)
-L5 = Flatten()(L4)
-output = Dense(1, name="out", activation="sigmoid", kernel_regularizer=l2(0.01))(L5)
+L4 = GATConv(8, attn_heads=2, concat_heads=True, activation=None)([L3_drop, A_in])
+L4_bn = BatchNormalization()(L4)
+L4_act = Activation('relu')(L4_bn)
+L4_drop = Dropout(0.2)(L4_act)
+
+L5 = GlobalMaxPool()(L4_drop)
+L6 = Flatten()(L5)
+output = Dense(1, name="out", activation="sigmoid", kernel_regularizer=l2(0.01))(L6)
 
 model = Model(inputs=[X_in, A_in, E_in], outputs=output)
 opt = keras.optimizers.Adam(learning_rate=1e-4)
 model.compile(optimizer=opt, loss='binary_crossentropy')
-model.summary()
 
 # Early stopping callback
 early_stopping = keras.callbacks.EarlyStopping(
@@ -106,9 +137,8 @@ early_stopping = keras.callbacks.EarlyStopping(
     mode='min',
     restore_best_weights=True
 )
-history = model.fit(x=[X_rus, A_rus, E_rus], y=y_rus, batch_size=100, epochs=500, validation_data=([X_val, A_val, E_val], y_val), callbacks=[early_stopping])
-model.save("v2.keras")
-
+history = model.fit(x=[X_ros, A_ros, E_ros], y=y_ros, batch_size=32, epochs=100, validation_data=([X_val, A_val, E_val], y_val), callbacks=[early_stopping])
+model.save("v4-weighted_sampling.keras")
 
 #validation
 y_pred_prob = model.predict([X_val, A_val, E_val])
@@ -155,4 +185,3 @@ plt.xlabel('Predicted Label')
 plt.ylabel('True Label')
 plt.title('Confusion Matrix')
 plt.savefig('conf-m.png')
-
