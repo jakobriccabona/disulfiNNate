@@ -24,5 +24,6 @@ docker build -t disulfinnate:v1 .
 
 the following command executes a test run:
 ```
-docker run --rm -v $(pwd):/disulfiNNate/data disulfinnate:v1 python disulfiNNate.py -i test/3ft7.pdb -o test/out.csv
+docker run --rm -v $(pwd):/disulfiNNate/data disulfinnate:v1 python disulfiNNate.py \
+-i test/3ft7.pdb -o test/out.csv -m v2.keras
 ```
